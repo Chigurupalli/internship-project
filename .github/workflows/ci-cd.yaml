@@ -1,3 +1,4 @@
+
 name: CI/CD Pipeline
 
 on:
@@ -22,21 +23,16 @@ jobs:
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/my-app
 
-  validate-k8s-yaml:
-    runs-on: ubuntu-latest
+  validate-k8s-manifests:
     needs: build-and-push
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
+      - name: Validate Kubernetes YAMLs using kubeconform
+        uses: docker://ghcr.io/yannh/kubeconform:latest
         with:
-          version: 'latest'
-
-      - name: Validate Kubernetes YAMLs (without cluster)
-        run: |
-          kubectl apply --dry-run=client --validate=false -f k8s/configmap.yaml
-          kubectl apply --dry-run=client --validate=false -f k8s/deployment.yaml
-          kubectl apply --dry-run=client --validate=false -f k8s/service.yaml
+          entrypoint: kubeconform
+        args: -strict -summary -output json -schema-location default -schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master' k8s/
