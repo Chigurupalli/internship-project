@@ -26,5 +26,5 @@ jobs:
 
       - name: Check rollout
         run: |
-          kubectl rollout status deployment/myapp-deployment
+          kubectl rollout status deployment/flask-app
 
